@@ -10,7 +10,7 @@ public class TA07_04_App {
 		// 1 generar base de datos con 10 artículos y distintos precios
 		Hashtable<String, Hashtable<String, Double>> lista_articulos_precio = generateProductDb();
 
-		// anadir producto nuevo a la base de datos
+		// Pensar alguna manera de hacer nueva tabla con las ventas
 		System.out.println("Desea [C]onsultar, [I]ntroducir datos, [G]estionar venta o [S]alir? (C/I):");
 		String opcion;
 
@@ -32,6 +32,9 @@ public class TA07_04_App {
 				break;
 
 			case "g":
+				// Separar deduct producto para generar nueva tabla que contenga
+				// Las ventas y así poder devoler el IVA y lo demás
+				// Si consigues tiempo para hecerlo
 				lista_articulos_precio = deductProducto(lista_articulos_precio, sc);
 				break;
 			default:
