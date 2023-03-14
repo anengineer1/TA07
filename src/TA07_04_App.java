@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Scanner;
 import java.util.Set;
@@ -5,13 +6,25 @@ import java.util.Set;
 public class TA07_04_App {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		final double IVA4 = 1.04;
+		final double IVA21 = 1.21;
+		double iva = 0.0;
+		double cantidad_pagada = 0.0;
+		double cantidad_a_devolver = 0.0;
+		double total_en_bruto = 0.0;
+		double total_en_neto = 0.0;
+		ArrayList<Hashtable<String, Hashtable<String, Double>>> contenedor_listas_almacen_ventas;
 
-		// 1 generar base de datos con 10 artículos y distintos precios
-		Hashtable<String, Hashtable<String, Double>> lista_articulos_precio = generateProductDb();
+		// 1) generar base de datos con 10 artículos y distintos precios
+		Hashtable<String, Hashtable<String, Double>> lista_articulos_almacen = generateProductDb();
+
+		// 2) Generar una tabla vacía en donde de pondrán las cosas vendidas para luego
+		// imprimir la info
+		Hashtable<String, Hashtable<String, Double>> lista_articulos_vendidos = new Hashtable<String, Hashtable<String, Double>>();
 
 		// Pensar alguna manera de hacer nueva tabla con las ventas
-		System.out.println("Desea [C]onsultar, [I]ntroducir datos, [G]estionar venta o [S]alir? (C/I):");
+		System.out.println(
+				"Desea [C]onsultar, [I]ntroducir datos, [G]estionar venta o [S]alir?:");
 		String opcion;
 
 		Scanner sc = new Scanner(System.in);
@@ -21,27 +34,93 @@ public class TA07_04_App {
 			switch (opcion) {
 			case "i":
 
-				lista_articulos_precio = addNuevoADb(lista_articulos_precio, sc);
+				lista_articulos_almacen = addNuevoADb(lista_articulos_almacen, sc);
 
-				printDatosAlmacen(lista_articulos_precio);
+				printDatosAlmacen(lista_articulos_almacen);
 
 				break;
-
+				
 			case "c":
-				printDatosAlmacen(lista_articulos_precio);
+				System.out.println("Artículos almacén");
+				printDatosAlmacen(lista_articulos_almacen);
+				System.out.println("Artículos vendidos:");
+				printDatosAlmacen(lista_articulos_vendidos);
+				System.out.println("Precio total:");
+				System.out.println(precioTotal(lista_articulos_vendidos));
+
+				if (iva != 0.0) {
+					total_en_bruto = precioTotal(lista_articulos_vendidos);
+					total_en_neto = total_en_bruto * iva;
+					System.out.println("Cantidad a pagar en bruto : " + total_en_bruto);
+					System.out.println("Cantidad a pagar en neto : " + total_en_neto);
+
+
+					cantidad_a_devolver = cantidad_pagada - total_en_neto;
+
+					System.out.println("Cantidad a devolver (Cantidades negativas es que el cliente ha de pagar más)");
+					System.out.println(cantidad_a_devolver);
+				}
+
 				break;
 
 			case "g":
 				// Separar deduct producto para generar nueva tabla que contenga
 				// Las ventas y así poder devoler el IVA y lo demás
 				// Si consigues tiempo para hecerlo
-				lista_articulos_precio = deductProducto(lista_articulos_precio, sc);
+				System.out.println("Desea [A]nadir venta, Realizar [T]ransacción, [N]ueva venta o [S]alir?:");
+				String opcion2 = sc.next().toLowerCase();
+				while (!opcion2.contains("s")) {
+					switch (opcion2) {
+					case "a":
+						contenedor_listas_almacen_ventas = deductProducto(lista_articulos_almacen,
+								lista_articulos_vendidos, sc);
+						lista_articulos_almacen = contenedor_listas_almacen_ventas.get(0);
+						lista_articulos_vendidos = contenedor_listas_almacen_ventas.get(1);
+						break;
+						
+					case "n":
+						lista_articulos_vendidos.clear();
+						break;
+					case "t":
+						if (!lista_articulos_vendidos.isEmpty()) {
+							// tratar datos
+							System.out.println("Qué IVA desea aplicar?");
+							System.out.println("[1] 4%");
+							System.out.println("[2] 21%");
+							System.out.println("Introduzca cualquier otro valor para no aplicar IVA");
+							sc.nextLine();
+
+							switch (sc.nextLine()) {
+							case "1":
+								iva = IVA4;
+								break;
+
+							case "2":
+								iva = IVA21;
+								break;
+
+							default:
+								break;
+
+							}
+							System.out.println("¿Qué cantidad ha pagado el cliente? (Vaya a consulta para acceder a la información)");
+							cantidad_pagada = sc.nextDouble();
+						} else {
+							System.out.println("No hay para hacer transacción");
+						}
+
+					default:
+						break;
+					}
+					System.out.println("Desea [A]nadir venta, Realizar [T]ransacción [S]alir?:");
+					opcion2 = sc.next().toLowerCase();
+				}
 				break;
 			default:
 
 				break;
 			}
-			System.out.println("Desea [C]onsultar, [I]ntroducir datos, [G]estionar venta o [S]alir? (C/I):");
+			System.out.println("Desea [C]onsultar, [I]ntroducir datos, [G]estionar venta o [S]alir?:");
 			opcion = sc.next().toLowerCase();
 		}
 		sc.close();
@@ -127,8 +206,9 @@ public class TA07_04_App {
 		return lista_productos;
 	}
 
-	public static Hashtable<String, Hashtable<String, Double>> deductProducto(
-			Hashtable<String, Hashtable<String, Double>> lista_productos, Scanner sc) {
+	public static ArrayList<Hashtable<String, Hashtable<String, Double>>> deductProducto(
+			Hashtable<String, Hashtable<String, Double>> lista_productos,
+			Hashtable<String, Hashtable<String, Double>> lista_articulos_vendidos, Scanner sc) {
 		// Scanner sc = new Scanner(System.in);
 
 		sc.nextLine();
@@ -143,16 +223,28 @@ public class TA07_04_App {
 		}
 
 		System.out.println("Introduzca la cantidad a restar:");
-		Double cantidad_producto = (double) sc.nextInt();
+		Double cantidad_producto_vendido = (double) sc.nextInt();
 
 		Hashtable<String, Double> cantidad_precio = lista_productos.get(nombre_producto);
 		double cantidad_inicial = lista_productos.get(nombre_producto).get("Cantidad");
-		double cantidad_final = cantidad_inicial - cantidad_producto;
+		double cantidad_final = cantidad_inicial - cantidad_producto_vendido;
 		cantidad_precio.put("Cantidad", cantidad_final);
 
 		lista_productos.put(nombre_producto, cantidad_precio);
 
-		return lista_productos;
+		// no incluír algo a la cesta si la cantidad vendida es 0
+		if (cantidad_producto_vendido > 0) {
+			Hashtable<String, Double> cantidad_precio_cesta = new Hashtable<String, Double>();
+			cantidad_precio_cesta.put("Cantidad", cantidad_producto_vendido);
+			cantidad_precio_cesta.put("Precio", cantidad_precio.get("Precio"));
+			lista_articulos_vendidos.put(nombre_producto, cantidad_precio_cesta);
+		}
+
+		ArrayList<Hashtable<String, Hashtable<String, Double>>> output = new ArrayList<Hashtable<String, Hashtable<String, Double>>>();
+		output.add(lista_productos);
+		output.add(lista_articulos_vendidos);
+
+		return output;
 	}
 
 	public static double precioTotal(Hashtable<String, Hashtable<String, Double>> lista_productos) {
